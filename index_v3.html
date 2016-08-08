@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<head>
+    <title>Hillary for America v3</title>
+    
+    <script src="//d3js.org/d3.v3.min.js"></script>
+    <meta charset="utf-8">
+    
+    <style>
+
+        
+    .bar {
+      fill: steelblue;
+    }
+
+    .bar:hover {
+      fill: brown;
+    }
+
+    .axis {
+      font: 10px sans-serif;
+    }
+
+    .axis path,
+    .axis line {
+      fill: none;
+      stroke: #000;
+      shape-rendering: crispEdges;
+    }
+
+    .x.axis path {
+      display: none;
+    }
+    
+    #datedisplay{
+        font-size: 22px;
+        color: black;
+    }
+    
+    #datecontrol {
+        width: 2000px;
+    }
+    
+    </style>
+    
+</head>
+
+<body>
+    <!-- default date 47, max y axis value 102, max input value 50 -->
+    <h1>Hillary Clinton Emoji Analysis &#x1f914</h1>
+    
+    <p id="datedisplay">2016_05_11</p>
+    
+    <div id="datecontol" style="font-size:14px;font-family:sans-serif;width:1000px">Date:
+        <input style="position:relative;top:4px;width:400px" type="range" min="0" max="21" step="1" value="0" id="datevalue">
+    </div>
+    
+    <script>
+    
+    var sliderdefault = 0
+    // Creating global variable to hold the data table
+    var counts;
+    var dates;
+    var ecodes;
+        
+    var margin = {top: 20, right: 20, bottom: 100, left: 70},
+        width = 1250 - margin.left - margin.right,
+        height = 550 - margin.top - margin.bottom;
+
+    var x = d3.scale.ordinal()
+        .rangeRoundBands([0, width], .1);
+
+    var y = d3.scale.linear()
+        .range([height, 0]);
+
+    var xAxis = d3.svg.axis()
+        .scale(x)
+        .orient("bottom");
+
+    var yAxis = d3.svg.axis()
+        .scale(y)
+        .orient("left")
+        .ticks(10);
+
+    var svg = d3.select("body").append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom + 50) 
+      .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    d3.json("e_codes.json", function(data){
+        ecodes = JSON.parse(data);
+        console.log(ecodes);
+        console.log(typeof(ecodes));
+    });
+    
+    d3.json("emoji_counts.json", function(data) {
+        counts = JSON.parse(data);
+        dates = d3.keys(counts);
+        
+        // dates = data.map(function(d) { return d.day; })
+    
+        console.log(counts);    
+        console.log(dates);
+        
+        x.domain(d3.keys(counts[dates[sliderdefault]]));
+        y.domain([0,2000]);
+        
+        svg.append("g")
+          .attr("class", "x axis")
+          .attr("transform", "translate(0," + height + ")")
+          .call(xAxis)
+        .selectAll("text")
+            .style("text-anchor", "end")
+            .attr("dx", "-.8em")
+            .attr("dy", ".15em")
+            .attr("transform", function(d) {
+                return "rotate(-35)" 
+                });
+
+        svg.append("g")
+          .attr("class", "y axis")
+          .call(yAxis)
+        .append("text")
+          .attr("transform", "rotate(-90)")
+          .attr("y", 6)
+          .attr("dy", ".71em")
+          .style("text-anchor", "end")
+          .text("Frequency");
+        
+        makechart(counts,+sliderdefault);
+        console.log(sliderdefault)
+        //console.log(typeof(counts));
+        //var t = d3.csv.parse(data);
+        //console.log(t.map(function(d){return d.day;}));
+        
+        
+    });
+        
+
+        
+    function makechart(data,selected) {
+        
+        // clear bars and labels
+        d3.selectAll(".bar").remove(); 
+        d3.selectAll(".labels").remove();
+    
+        console.log(selected)
+        
+        selected_data=data[dates[selected]];
+        
+        console.log(selected_data);
+        
+        
+
+        //svg.selectAll(".bar")
+        //  .data(data)
+        //.enter().append("rect")
+        //  .attr("class", "bar")
+        //  .attr("x", function(d) { return x(d.letter); })
+        //  .attr("width", x.rangeBand())
+        //  .attr("y", function(d) { return y(d.frequency); })
+        //  .attr("height", function(d) { return height - y(d.frequency); });
+        
+        
+        svg.selectAll(".bar")
+          .data(d3.entries(selected_data))
+        .enter().append("rect")
+          .attr("class", "bar")
+          .attr("x", function(d) { return x(d.key); })
+          .attr("width", x.rangeBand())
+          .attr("y", function(d) { return y(d.value); })
+          .attr("height", function(d) { return height - y(d.value); });
+
+
+      svg.selectAll(".labels")
+          .data(d3.entries(selected_data))
+        .enter().append("text")
+          .html(function(d) { return ecodes[d.key]['htmlcode']; })
+            .attr("x", function(d) { return x(d.key); })
+            .attr("y", function(d) { return y(d.value) - 5; })
+            //.attr("fill", "blue")
+            .attr("font-size","20px")
+            //.attr("text-anchor","middle")
+            .attr("class","labels")
+            ;
+    };
+
+
+    function type(d) {
+      d.frequency = +d.frequency;
+      return d;
+    }
+        
+    
+    
+    // when the input range changes update the circle 
+    d3.select("#datevalue").on("input", function() {
+        var selected = this.value;
+        // console.log(selected)
+        console.log(dates[selected])
+        
+        d3.select("#datedisplay").text(dates[selected])
+        makechart(counts,selected);
+    });
+        
+    // when the input range changes update the circle 
+    //d3.select("#datevalue").on("input", function() {
+    //  console.log(function(this.value){return dates[this.value];})
+    //});
+        
+    
+        
+    </script>
+    
+    <p>Note: This data was acquired by the Twitter API collecting all @HillaryClinton tweets available for that day. This analysis is subject to the availability and sampling methods of information made available through the Twitter API.</p>
