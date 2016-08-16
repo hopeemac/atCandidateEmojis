@@ -39,18 +39,40 @@
     #datecontrol {
         width: 2000px;
     }
+    .button {
+        background-color: #4CAF50; /* Green */
+        border: 1px solid green;
+        color: white;
+        padding: 15px 32px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 16px;
+        cursor: pointer;
+        float: left;
+    }
+
+    .button:hover {
+        background-color: #3e8e41;
+    }
     
     </style>
     
 </head>
 
-<body>
+<body bgcolor="white">
     <!-- default date 47, max y axis value 102, max input value 50 -->
     <h1>at Candidate Emoji Analysis &#x1f914</h1>
+
+    <p style="font-size: 22px">Select a Candidate to View Emojis:</p>
+        <button id="HillaryClinton" onclick="changeCandidate(this.id)" style="background-color: blue" class="button">Hillary Clinton (D)</button>
+        <button id="realDonaldTrump" onclick="changeCandidate(this.id)" style="background-color: red" class="button">Donald Trump (R)</button>
+
+    <p style="clear:both"><br></p>
     
     <p id="datedisplay">2016_05_11</p>
     
-    <div id="datecontol" style="font-size:14px;font-family:sans-serif;width:1000px">Date:
+    <div id="datecontol" style="font-size:22px;width:1000px">Date:
         <input style="position:relative;top:4px;width:400px" type="range" min="0" max="21" step="1" value="0" id="datevalue">
     </div>
     
@@ -61,6 +83,8 @@
     var counts;
     var dates;
     var ecodes;
+    var selected;
+    var candidate;
         
     var margin = {top: 20, right: 20, bottom: 100, left: 70},
         width = 1250 - margin.left - margin.right,
@@ -83,26 +107,56 @@
 
     var svg = d3.select("body").append("svg")
         .attr("width", width + margin.left + margin.right)
-        .attr("height", height + margin.top + margin.bottom + 50) 
+        .attr("height", height + margin.top + margin.bottom + 50)
+        .attr("id","mySVG")
       .append("g")
         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
     d3.json("e_codes.json", function(data){
-        ecodes = JSON.parse(data);
+        //ecodes = JSON.parse(data);
+        ecodes = data
         console.log(ecodes);
         console.log(typeof(ecodes));
     });
     
     d3.json("emoji_counts.json", function(data) {
-        counts = JSON.parse(data);
-        dates = d3.keys(counts);
+        counts = data;
+        
         
         // dates = data.map(function(d) { return d.day; })
     
         console.log(counts);    
         console.log(dates);
+
+        candidate = 'HillaryClinton'
+        makechart(counts, +sliderdefault, candidate);
+        console.log(sliderdefault)
+        //console.log(typeof(counts));
+        //var t = d3.csv.parse(data);
+        //console.log(t.map(function(d){return d.day;}));
         
-        x.domain(d3.keys(counts[dates[sliderdefault]]));
+        
+    });
+        
+
+        
+    function makechart(data, selected, candidate) {
+        dates = d3.keys(data[candidate]);
+        
+        selected_data=data[candidate][dates[selected]];
+        
+        console.log(selected);
+        console.log(selected_data);
+        
+        // clear bars and labels
+        // d3.selectAll("svg > *").remove();
+        d3.selectAll(".bar").remove(); 
+        d3.selectAll(".labels").remove();
+        d3.selectAll(".x.axis").remove();
+        d3.selectAll(".y.axis").remove();
+        
+        // Create x and y axis
+        x.domain(d3.keys(selected_data));
         y.domain([0,2000]);
         
         svg.append("g")
@@ -127,28 +181,7 @@
           .style("text-anchor", "end")
           .text("Frequency");
         
-        makechart(counts,+sliderdefault);
-        console.log(sliderdefault)
-        //console.log(typeof(counts));
-        //var t = d3.csv.parse(data);
-        //console.log(t.map(function(d){return d.day;}));
         
-        
-    });
-        
-
-        
-    function makechart(data,selected) {
-        
-        // clear bars and labels
-        d3.selectAll(".bar").remove(); 
-        d3.selectAll(".labels").remove();
-    
-        console.log(selected)
-        
-        selected_data=data[dates[selected]];
-        
-        console.log(selected_data);
         
         
 
@@ -184,7 +217,42 @@
             .attr("class","labels")
             ;
     };
+        
+    function changeCandidate(id) {
+        candidate = id;
+        console.log(id);
+        makechart(counts, +sliderdefault, id);
+    }
 
+    function changeDate(data, candidate, selected) {
+        
+        d3.selectAll(".bar").remove(); 
+        d3.selectAll(".labels").remove();
+        
+        selected_data=data[candidate][dates[selected]];
+        
+        svg.selectAll(".bar")
+          .data(d3.entries(selected_data))
+        .enter().append("rect")
+          .attr("class", "bar")
+          .attr("x", function(d) { return x(d.key); })
+          .attr("width", x.rangeBand())
+          .attr("y", function(d) { return y(d.value); })
+          .attr("height", function(d) { return height - y(d.value); });
+
+
+        svg.selectAll(".labels")
+          .data(d3.entries(selected_data))
+        .enter().append("text")
+          .html(function(d) { return ecodes[d.key]['htmlcode']; })
+            .attr("x", function(d) { return x(d.key); })
+            .attr("y", function(d) { return y(d.value) - 5; })
+            //.attr("fill", "blue")
+            .attr("font-size","20px")
+            //.attr("text-anchor","middle")
+            .attr("class","labels")
+        
+    }
 
     function type(d) {
       d.frequency = +d.frequency;
@@ -193,14 +261,14 @@
         
     
     
-    // when the input range changes update the circle 
+    // when the input range changes update the graph
     d3.select("#datevalue").on("input", function() {
-        var selected = this.value;
+        selected = this.value;
         // console.log(selected)
-        console.log(dates[selected])
+        console.log(dates[+selected])
         
         d3.select("#datedisplay").text(dates[selected])
-        makechart(counts,selected);
+        changeDate(counts, candidate, selected);
     });
         
     // when the input range changes update the circle 
