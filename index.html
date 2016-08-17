@@ -6,7 +6,9 @@
     <meta charset="utf-8">
     
     <style>
-
+    * {
+        color: black;
+        }
         
     .bar {
       fill: steelblue;
@@ -33,12 +35,12 @@
     
     #datedisplay{
         font-size: 22px;
-        color: black;
     }
     
     #datecontrol {
         width: 2000px;
     }
+    
     .button {
         background-color: #4CAF50; /* Green */
         border: 1px solid green;
@@ -65,12 +67,12 @@
     <h1>at Candidate Emoji Analysis &#x1f914</h1>
 
     <p style="font-size: 22px">Select a Candidate to View Emojis:</p>
-        <button id="HillaryClinton" onclick="changeCandidate(this.id)" style="background-color: blue" class="button">Hillary Clinton (D)</button>
-        <button id="realDonaldTrump" onclick="changeCandidate(this.id)" style="background-color: red" class="button">Donald Trump (R)</button>
+        <button id="HillaryClinton" onclick="changeCandidate(counts,this.id)" style="background-color: blue" class="button">Hillary Clinton (D)</button>
+        <button id="realDonaldTrump" onclick="changeCandidate(counts,this.id)" style="background-color: red" class="button">Donald Trump (R)</button>
 
     <p style="clear:both"><br></p>
     
-    <p id="datedisplay">2016_05_11</p>
+    <p id="datedisplay"></p>
     
     <div id="datecontol" style="font-size:22px;width:1000px">Date:
         <input style="position:relative;top:4px;width:400px" type="range" min="0" max="21" step="1" value="0" id="datevalue">
@@ -129,6 +131,7 @@
         console.log(dates);
 
         candidate = 'HillaryClinton'
+        
         makechart(counts, +sliderdefault, candidate);
         console.log(sliderdefault)
         //console.log(typeof(counts));
@@ -141,10 +144,12 @@
 
         
     function makechart(data, selected, candidate) {
-        dates = d3.keys(data[candidate]);
-        
+        dates = d3.keys(data[candidate]).sort();
+        //console.log(dates)
+        //console.log(dates.sort())
         selected_data=data[candidate][dates[selected]];
         
+        d3.select("#datedisplay").text(dates[selected])
         console.log(selected);
         console.log(selected_data);
         
@@ -218,9 +223,19 @@
             ;
     };
         
-    function changeCandidate(id) {
+    function changeCandidate(data, id) {
         candidate = id;
         console.log(id);
+        
+        dates = d3.keys(data[id]).sort();
+        
+        // Change the Range of the Input Scale by Candidate's Date List
+        document.getElementById("datevalue").max = dates.length-1
+        console.log(document.getElementById("datevalue").max)
+        
+        // Return Slider Input Value to Default
+        document.getElementById("datevalue").value = +sliderdefault
+        
         makechart(counts, +sliderdefault, id);
     }
 
