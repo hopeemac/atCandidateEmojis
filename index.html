@@ -79,7 +79,8 @@
         <input style="position:relative;top:4px;width:400px" type="range" min="0" max="21" step="1" value="0" id="datevalue">
     </div>
 
-    
+    <svg width="1350" height="700"></svg>
+	
     <script>
     
     var sliderdefault = 0
@@ -90,31 +91,7 @@
     var selected;
     var candidate;
         
-    var margin = {top: 20, right: 20, bottom: 100, left: 70},
-        width = 1250 - margin.left - margin.right,
-        height = 550 - margin.top - margin.bottom;
-
-    var x = d3.scale.ordinal()
-        .rangeRoundBands([0, width], .1);
-
-    var y = d3.scale.linear()
-        .range([height, 0]);
-
-    var xAxis = d3.svg.axis()
-        .scale(x)
-        .orient("bottom");
-
-    var yAxis = d3.svg.axis()
-        .scale(y)
-        .orient("left")
-        .ticks(10);
-
-    var svg = d3.select("body").append("svg")
-        .attr("width", width + margin.left + margin.right)
-        .attr("height", height + margin.top + margin.bottom + 50)
-        .attr("id","mySVG")
-      .append("g")
-        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+    
 
     d3.json("e_codes.json", function(data){
         //ecodes = JSON.parse(data);
@@ -146,6 +123,42 @@
 
         
     function makechart(data, selected, candidate) {
+		
+		var windowWidth = window.innerWidth - 100;
+    	var windowHieght = window.innerHeight - 200;
+		
+		var margin = {top: 20, right: 20, bottom: 150, left: 70},
+			width = windowWidth - margin.left - margin.right,
+			height = windowHieght - margin.top - margin.bottom;
+		
+		var svg = d3.select("svg")
+			.attr("width", width + margin.left + margin.right)
+			.attr("height", height + margin.top + margin.bottom + 50)
+			.attr("id","mySVG")
+		  .append("g")
+			.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+		
+		console.log(width);
+		console.log(height);
+		
+		console.log(svg.width);
+		
+		var x = d3.scale.ordinal()
+			.rangeRoundBands([0, width], .1);
+
+		var y = d3.scale.linear()
+			.range([height, 0]);
+
+		var xAxis = d3.svg.axis()
+			.scale(x)
+			.orient("bottom");
+
+		var yAxis = d3.svg.axis()
+			.scale(y)
+			.orient("left")
+			.ticks(10);
+
+
         dates = d3.keys(data[candidate]).sort();
 		
 		// Change the Range of the Input Scale by Candidate's Date List
@@ -297,7 +310,12 @@
     //  console.log(function(this.value){return dates[this.value];})
     //});
         
-    
+	// Change size of the plot when the browser window is re-sized
+    window.onresize = function(event) {
+        makechart(counts, +sliderdefault, candidate);
+        console.log(window.innerHeight);
+        console.log(window.innerWidth)
+    };   
         
     </script>
     
