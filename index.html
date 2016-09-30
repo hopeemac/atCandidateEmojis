@@ -49,7 +49,7 @@
         console.log(typeof(ecodes));
     });
     
-    d3.json("emoji_counts.json", function(data) {
+    d3.json("emoji_counts_minute.json", function(data) {
         counts = data;
 
         candidate = candidateDefault;
@@ -111,7 +111,10 @@
 
         // Create x and y axis
         x.domain(d3.keys(selected_data));
-        y.domain([0,4000]);
+        y.domain([
+            0,
+            200
+          ]);
         
         svg.append("g")
           .attr("class", "x axis")
@@ -193,8 +196,9 @@
         makechart(counts, +dateSelected, candidate);
         console.log(window.innerHeight);
         console.log(window.innerWidth)
-    };   
+    };
+	
         
     </script>
     
-    <p>Note: This data was acquired by the Twitter API collecting all @HillaryClinton tweets available for that day. This analysis is subject to the availability and sampling methods of information made available through the Twitter API.</p>
+    <p>Note: These graphs were produced by the University of Virginia's Twitter Visualization Project. Data were acquired via the Twitter API, collecting all @candidate tweets available for that day. This analysis reflects the availability and sampling methods of information made available through the Twitter API. For questions, please contact Hope McIntyre (hm7zg@virginia.edu), Paul Freedman (pf7h@virginia.edu), or David Leblang (dal7w@virginia.edu).</p>
