@@ -11,20 +11,29 @@
 </head>
 
 <body bgcolor="white">
-    <!-- default date 47, max y axis value 102, max input value 50 -->
-    <h1 align="center">2016 Presidential Candidates Directed Tweets (@) Emoji Analysis</h1>
+	<h1 align="center">2016 Presidential Candidates Directed Tweets (@) Emoji Analysis</h1>
+	
+	<div class="container">
 
-	<div align="center">
-        <button id="HillaryClinton" onclick="changeCandidate(counts,this.id)" style="background-color: blue" class="button">Hillary Clinton (D)</button>
-        <button id="realDonaldTrump" onclick="changeCandidate(counts,this.id)" style="background-color: red" class="button">Donald Trump (R)</button>
-    </div><br />
-
-    <p style="clear:both"><br></p>
-    
-    <p id="datedisplay"></p>
-    
-    <div id="datecontrol" style="font-size:22px;width:1000px">Date:
-        <input style="position:relative;top:4px;width:400px" type="range" min="0" max="21" step="1" value="0" id="datevalue">
+	<div class='debateButtons'>
+		<form onClick="changeDebate()">
+		  <input type="radio" name="debate" value="20161005" checked="checked"> Oct. 5 VP Debate<br>
+		  <input type="radio" name="debate" value="20160926"> Sept. 26 Pres Debate<br>
+		</form>
+	</div>
+	
+	<div class='candidateButtons'>
+		<span id="candidatedisplay"></span>
+		<button id="HillaryClinton" onclick="changeCandidate(counts,this.id)" style="background-color: blue" class="candidateButton">Hillary Clinton (D)</button>
+		<button id="realDonaldTrump" onclick="changeCandidate(counts,this.id)" style="background-color: red" class="candidateButton">Donald Trump (R)</button>
+	</div>
+	
+	<div class='dateButtons'>
+		<span id="datedisplay"></span>
+		<input type="range" min="0" max="21" step="1" value="0" id="datevalue">
+		<button name="play" id="play">Play</button>
+	</div>
+	
     </div>
 
     <svg width="1350" height="700"></svg>
@@ -38,25 +47,116 @@
     var counts;
     var dates;
     var ecodes;
-		
+	
+	// Variables to hold where latest button values
     var dateSelected;
     var candidate;
+	
+	function getData(){
+		// Get Emoji HTML Codes	
+		d3.json("e_codes.json", function(data){
+			//ecodes = JSON.parse(data);
+			ecodes = data
+			console.log(ecodes);
+			console.log(typeof(ecodes));
+		});
+		
+		// Get Data for the Selected Debate
+		console.log(getRadioValue('debate'));
+		//fileName = "emoji_counts_minute_" +getRadioValue('debate')+".json"
+		fileName = "emoji_counts_minute.json"
+		d3.json(fileName, function(data) {
+			counts = data;
 
-    d3.json("e_codes.json", function(data){
-        //ecodes = JSON.parse(data);
-        ecodes = data
-        console.log(ecodes);
-        console.log(typeof(ecodes));
-    });
-    
-    d3.json("emoji_counts_minute.json", function(data) {
-        counts = data;
+			candidate = candidateDefault;
+			makechart(counts, +dateDefault, candidateDefault);
 
-        candidate = candidateDefault;
-       	makechart(counts, +dateDefault, candidateDefault);
-        
-    });
-                
+		});
+		
+		
+	}
+	getData();
+		
+	function changeDebate(){
+		// Pause Play if Change Debate
+		clearInterval(timer);
+		playButton.html("Play");
+		running = false;
+		
+		// Return Slider and Slider Value to Zero
+		sliderValue = 0;
+        document.getElementById("datevalue").value = +sliderValue;
+		
+		// Get the New Data & Make Chart
+		getData();
+	}
+		
+	var running = false;
+	var timer;
+	var sliderValue = 0;
+		
+	var playButton = d3.select("#play");
+	playButton.on("click", function() {
+		
+		var duration = 3000,
+			maxstep = 2011,
+			minstep = 2000;
+
+		if (running == true) {
+			clearInterval(timer);
+			playButton.html("Play");
+			running = false;
+			
+			//clearInterval(timer);
+
+		} 
+		/*
+		else if (running == true && $("#slider").val() == maxstep) {
+			 running = true;
+			 $("button").html("Play1");
+
+
+		} 
+*/
+		else if (running == false) {
+
+			playButton.html("Pause");
+			playUpdate();
+			//sliderValue = $("#slider").val();
+
+			//timer = setInterval( function(){
+			//		if (sliderValue < maxstep){
+			//			sliderValue++;
+			//			$("#slider").val(sliderValue);
+			//			$('#range').html(sliderValue);
+			//		}
+			//		$("#slider").val(sliderValue);
+			//		update();
+
+			//}, duration);
+			running = true;
+
+
+		}
+
+	}
+				  );
+		
+	function playUpdate(){
+		// For each date in List
+		//sliderValue = 0;
+		var maxstep = dates.length-1;
+		var sliderButton = d3.select("#datevalue");
+		timer = setInterval(function() {
+			if (sliderValue < maxstep){
+				sliderValue++;
+				sliderButton.property("value", sliderValue);
+				makechart(counts, sliderValue, candidate);
+				
+			}
+		}, 500);
+	};
+		        
     function makechart(data, dateSelected, candidate) {
 		
 		// clear bars and labels
@@ -107,6 +207,8 @@
         d3.select("#datedisplay").text(dates[dateSelected])
         console.log(dateSelected);
         console.log(selected_data);
+		
+		d3.select("#candidatedisplay").text("Selected Candidate: '"+candidate+"' ");
         
 
         // Create x and y axis
@@ -171,34 +273,52 @@
         console.log(document.getElementById("datevalue").max)
         
         // Return Slider Input Value to Default
-        document.getElementById("datevalue").value = +dateDefault
-        
-        makechart(counts, +dateDefault, candidate);
+        document.getElementById("datevalue").value = +sliderValue;
+		
+        d3.select("#candidatedisplay").text("Selected Candidate: "+candidate)
+        makechart(counts, sliderValue, candidate);
+		
+		// Pause Play if Change Candidate
+		clearInterval(timer);
+		playButton.html("Play");
+		running = false;
     }
+
 
     function type(d) {
       d.frequency = +d.frequency;
       return d;
     }
+		
+	function getRadioValue(theRadioGroup){
+		var elements = document.getElementsByName(theRadioGroup);
+		for (var i = 0, l = elements.length; i < l; i++)
+		{
+			if (elements[i].checked)
+			{
+				return elements[i].value;
+			}
+		}
+	}
          
     // Update the graph when the input date from range changes 
     d3.select("#datevalue").on("input", function() {
-        dateSelected = this.value;
+        sliderValue = this.value;
         // console.log(dateSelected)
-        console.log(dates[+dateSelected])
+        //console.log(dates[+dateSelected])
         
-        d3.select("#datedisplay").text(dates[dateSelected])
-        makechart(counts, dateSelected, candidate);
+        d3.select("#datedisplay").text(dates[sliderValue])
+        makechart(counts, sliderValue, candidate);
     });
         
 	// Change size of the plot when the browser window is re-sized
     window.onresize = function(event) {
-        makechart(counts, +dateSelected, candidate);
-        console.log(window.innerHeight);
-        console.log(window.innerWidth)
+        makechart(counts, sliderValue, candidate);
+        //console.log(window.innerHeight);
+        //console.log(window.innerWidth)
     };
 	
         
     </script>
     
-    <p>Note: These graphs were produced by the University of Virginia's Twitter Visualization Project. Data were acquired via the Twitter API, collecting all @candidate tweets available for that day. This analysis reflects the availability and sampling methods of information made available through the Twitter API. For questions, please contact Hope McIntyre (hm7zg@virginia.edu), Paul Freedman (pf7h@virginia.edu), or David Leblang (dal7w@virginia.edu).</p>
+    <p>Note: These graphs were produced by the University of Virginia's Twitter Visualization Project. Data were acquired via the Twitter API, collecting all @candidate tweets available for that day. This analysis reflects the availability and sampling methods of information made available through the Twitter API. For questions, please contact Hope McIntyre (hm7zg@virginia.edu), Paul Freedman (freedman@virginia.edu), or David Leblang (dal7w@virginia.edu).</p>
