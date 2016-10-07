@@ -22,21 +22,21 @@
 </head>
 
 <body bgcolor="white">
-	<h1 align="center">2016 Presidential Candidates Directed Tweets (@) Emoji Analysis</h1>
+	<h1 align="center">2016 Presidential Election Debates - Directed Tweets (@) Emoji Analysis</h1>
 	
 	<div class="container">
 
 	<div class='debateButtons'>
 		<form onClick="changeDebate()">
-		  <input type="radio" name="debate" value="20161005" checked="checked"> Oct. 5 VP Debate<br>
+		  <input type="radio" name="debate" value="20161004" checked="checked"> Oct. 4 VP Debate<br>
 		  <input type="radio" name="debate" value="20160926"> Sept. 26 Pres Debate<br>
 		</form>
 	</div>
 	
 	<div class='candidateButtons'>
 		<span id="candidatedisplay"></span>
-		<button id="HillaryClinton" onclick="changeCandidate(counts,this.id)" style="background-color: blue" class="candidateButton">Hillary Clinton (D)</button>
-		<button id="realDonaldTrump" onclick="changeCandidate(counts,this.id)" style="background-color: red" class="candidateButton">Donald Trump (R)</button>
+		<button id="democrat" onclick="changeCandidate(counts,this.id)" style="background-color: blue" class="candidateButton">Hillary Clinton (D)</button>
+		<button id="republican" onclick="changeCandidate(counts,this.id)" style="background-color: red" class="candidateButton">Donald Trump (R)</button>
 	</div>
 	
 	<div class='dateButtons'>
@@ -49,64 +49,71 @@
 
     <svg width="1350" height="700"></svg>
 	
+	<div id="floater">
+		<span id="emojiName" style="font-weight: bold"></span><br />
+	</div>
+	
     <script>
     
-	var candidateDefault = 'HillaryClinton';
-    var dateDefault = 0;
+	// Global Variables
 	
-    // Creating global variable to hold the data table
+	//var candidateDefault = 'HillaryClinton';
+    //var dateDefault = 0;
+	
+    // Hold the data table
     var counts;
     var dates;
     var ecodes;
 	
-	// Variables to hold where latest button values
-    var dateSelected;
-    var candidate;
+	// Latest button values
+    var dateSelected = 0;
+    //var candidate;
+		
+	//var democrat;
+	//var republican;
+	var candidateParty = 'democrat';
+	var candidateMaster;
+		
+	var running = false;
+	var timer;
+	var sliderValue = 0;
+	var playButton = d3.select("#play");
 	
 	function getData(){
-		// Get Emoji HTML Codes	
+		console.log("called getData")
+		if(getRadioValue('debate') == 20161004){
+			d3.select('#democrat').text('timkaine')
+			d3.select('#republican').text('mike_pence')
+			if (candidateParty == 'democrat'){
+				candidateMaster = 'timkaine';}
+			else {candidateMaster = 'mike_pence';}
+			}
+		else{
+			d3.select('#democrat').text('HillaryClinton')
+			d3.select('#republican').text('realDonaldTrump')
+			if (candidateParty == 'democrat'){
+			candidateMaster = 'HillaryClinton';}
+			else {candidateMaster = 'realDonaldTrump';}
+			}
+		console.log(candidateMaster)
+
 		d3.json("e_codes.json", function(data){
-			//ecodes = JSON.parse(data);
-			ecodes = data
-			console.log(ecodes);
-			console.log(typeof(ecodes));
-		});
-		
-		// Get Data for the Selected Debate
-		console.log(getRadioValue('debate'));
-		//fileName = "emoji_counts_minute_" +getRadioValue('debate')+".json"
-		fileName = "emoji_counts_minute.json"
-		d3.json(fileName, function(data) {
-			counts = data;
-
-			candidate = candidateDefault;
-			makechart(counts, +dateDefault, candidateDefault);
-
+			ecodes = data;
+			fileName = "emoji_counts_minute_" +getRadioValue('debate')+".json";
+			
+			d3.json(fileName, function(data) {
+				counts = data;
+				console.log("loading counts data");
+				makechart(sliderValue, candidateMaster);
+			});
 		});
 		
 		
 	}
 	getData();
 		
-	function changeDebate(){
-		// Pause Play if Change Debate
-		clearInterval(timer);
-		playButton.html("Play");
-		running = false;
 		
-		// Return Slider and Slider Value to Zero
-		sliderValue = 0;
-        document.getElementById("datevalue").value = +sliderValue;
-		
-		// Get the New Data & Make Chart
-		getData();
-	}
-		
-	var running = false;
-	var timer;
-	var sliderValue = 0;
-		
-	var playButton = d3.select("#play");
+	
 	playButton.on("click", function() {
 		
 		var duration = 3000,
@@ -162,13 +169,15 @@
 			if (sliderValue < maxstep){
 				sliderValue++;
 				sliderButton.property("value", sliderValue);
-				makechart(counts, sliderValue, candidate);
+				makechart(sliderValue, candidateMaster);
 				
 			}
 		}, 500);
 	};
 		        
-    function makechart(data, dateSelected, candidate) {
+    function makechart(dateSelected, candidate) {
+		console.log("called makechart")
+		d3.select("#candidatedisplay").text("Selected Candidate: "+candidateMaster);
 		
 		// clear bars and labels
         // d3.selectAll("svg > *").remove();
@@ -207,20 +216,21 @@
 			.orient("left")
 			.ticks(10);
 
-        dates = d3.keys(data[candidate]).sort();
+		console.log(counts)
+        dates = d3.keys(counts[candidateMaster]).sort();
 		
 		// Change the Range of the Input Scale by Candidate's Date List
         document.getElementById("datevalue").max = dates.length-1
 		
         //console.log(dates)
         //console.log(dates.sort())
-        selected_data=data[candidate][dates[dateSelected]];
+        selected_data=counts[candidateMaster][dates[dateSelected]];
         
         d3.select("#datedisplay").text(dates[dateSelected])
         console.log(dateSelected);
         console.log(selected_data);
 		
-		d3.select("#candidatedisplay").text("Selected Candidate: '"+candidate+"' ");
+		d3.select("#candidatedisplay").text("Selected Candidate: '"+candidateMaster+"' ");
         
 
         // Create x and y axis
@@ -261,8 +271,10 @@
           .attr("y", function(d) { return y(d.value); })
           .attr("height", function(d) { return height - y(d.value); })
 			.attr("fill", function(){
-			if (candidate == 'realDonaldTrump'){
-				return '#e60000'} else {return 'blue'};});
+			if (candidateParty == 'democrat'){
+				return 'blue'} else {return '#e60000'};})
+		
+		;
 
       svg.selectAll(".labels")
           .data(d3.entries(selected_data))
@@ -272,32 +284,47 @@
             .attr("y", function(d) { return y(d.value) - 5; })
             //.attr("fill", "blue")
             .attr("font-size","20px")
+	  		.attr("id",function(d) { return d.key; })
             //.attr("text-anchor","middle")
             .attr("class","labels")
+	  		.on("mouseover",showEmojiName)
+	  		.on("mouseout",hideEmojiName)
+	  		
             ;
     };
         
     function changeCandidate(data, id) {
-        candidate = id;
+        candidateParty = id;
+		//candidate = id;
         console.log(id);
-        
-        dates = d3.keys(data[candidate]).sort();
-        
-        // Change the Range of the Input Scale by Candidate's Date List
-        document.getElementById("datevalue").max = dates.length-1
-        console.log(document.getElementById("datevalue").max)
         
         // Return Slider Input Value to Default
         document.getElementById("datevalue").value = +sliderValue;
 		
-        d3.select("#candidatedisplay").text("Selected Candidate: "+candidate)
-        makechart(counts, sliderValue, candidate);
+        d3.select("#candidatedisplay").text("Selected Candidate: "+candidateMaster);
+		
+        //makechart(counts, sliderValue, candidate);
 		
 		// Pause Play if Change Candidate
 		clearInterval(timer);
 		playButton.html("Play");
 		running = false;
+		
+		getData();
     }
+		
+	function changeDebate(){
+		// Pause Play if Change Debate
+		clearInterval(timer);
+		playButton.html("Play");
+		running = false;
+		
+		// Return Slider and Slider Value to Zero
+		sliderValue = 0;
+        document.getElementById("datevalue").value = +sliderValue;
+		
+		getData();
+	}
 
 
     function type(d) {
@@ -323,16 +350,37 @@
         //console.log(dates[+dateSelected])
         
         d3.select("#datedisplay").text(dates[sliderValue])
-        makechart(counts, sliderValue, candidate);
+        makechart(sliderValue, candidateMaster);
     });
         
 	// Change size of the plot when the browser window is re-sized
     window.onresize = function(event) {
-        makechart(counts, sliderValue, candidate);
+        makechart(sliderValue, candidateMaster);
         //console.log(window.innerHeight);
         //console.log(window.innerWidth)
     };
 	
+	function showEmojiName(){
+		console.log("got here")
+		console.log(this.id)
+		d3.select("#emojiName")
+			.text(this.id)
+		;
+		d3.select("#floater")
+			.style("top", (d3.event.pageY - 25)+ "px")
+			.style("left", (d3.event.pageX - 150/2)+ "px")
+			.style("visibility","visible")
+			//.attr("transform", "rotate(45)")
+		;
+		;
+	}
+		
+	function hideEmojiName(){
+		console.log('hide #tag')
+		d3.select("#floater")
+			.style("visibility","hidden");
+			;
+	}
         
     </script>
     
